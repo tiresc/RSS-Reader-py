@@ -1,30 +1,40 @@
+#
+# RSS Reader
+# Take url input
+# List all titles
+# give choice of which
+#
+#
+import urllib.request
 import sys
-from PySide2.QtWidgets import (QLineEdit, QPushButton, QApplication,
-    QVBoxLayout, QDialog)
-class Form(QDialog):
-	def __init__(self, parent=None):
-		super(Form, self).__init__(parent)
-		# create Widgets
-		self.edit = QLineEdit("Enter RSS FEED")
-		self.button = QPushButton("Enter")
-		self.setWindowTitle("RSS Reader")
-		# Create layout and add widgets
-		layout = QVBoxLayout()
-		layout.addWidget(self.edit)
-		layout.addWidget(self.button)
-		# Set dialog layout
-		self.setLayout(layout)
-		# add buton signal to greetings slot
-		self.button.clicked.connect(self.greetings)
+import requests
+import feedparser
+import wget
 
-	def greetings(self):
-		print ("link: {}".format(self.edit.text()))
+def main():
+	website = ' '
+	default = 'https://lexfridman.com/category/ai/feed/'
+	site = input('RSS feed: ')
+	
+	if site == '':
+		site = default
 
+	# Gets Byte size of website
+	response = requests.get(site)
+	site_length = len(response.content)
+
+	# Puts content of site in 'website' for further parsing
+	with urllib.request.urlopen(site) as f:
+		website = f.read(site_length).decode('utf-8')
+	print( site_length )
+	
+	feed = feedparser.parse( site )
+
+	for x in range(0,len(feed.entries)):
+		print(feed.entries[x].title)
+		print(feed.entries[x].link)
+	print( website )
+	
 if __name__ == '__main__':
-	# Create the QT Application
-	app = QApplication(sys.argv)
-	# Create and show the form 
-	form = Form()
-	form.show()
-	#Run the main QT loop
-	sys.exit(app.exec_())
+	main()
+	
