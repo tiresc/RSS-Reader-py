@@ -19,7 +19,7 @@ class SITE():
 		self.site_address = ' '
 		self.website = ' '
 		self.default = 'https://lexfridman.com/category/ai/feed/'
-		self.site = input('RSS feed: ')#'https://lexfridman.com/category/ai/feed/'#input('RSS feed: ')
+		self.site = 'https://lexfridman.com/category/ai/feed/'#input('RSS feed: ')
 		self.feed = ' '
 		self.site_size = 0
 		self.response = ' '
@@ -41,7 +41,9 @@ class SITE():
 	def print_info(self):
 		for x in range(0,len(self.feed.entries)):
 			print(self.feed.entries[x].title)
-		#print( self.website )
+
+		# Prints out entire website
+		#Print( self.website )
 
 def create_directories():
 	if os.path.isdir('feeds') and os.path.isdir('config'):
@@ -88,17 +90,22 @@ def main():
 	new_site = SITE()
 	new_site.get_site_size()
 	new_site.download_site()
-	new_site.print_info()
-
-	#len(new_site.feed.entries)-1
-	for x in range(0,len(new_site.feed.entries)-1):
+	#new_site.print_info()
+	numbers = 0
+	feed_length = len(new_site.feed.entries)-1
+	#len(new_site.feed.entries)-1 
+	for x in range(0,feed_length):
 		print(new_site.feed.entries[x].title)
 	
-	new_site.site = new_site.feed.entries[0].links[1].href
-	#print(new_site.site)
+	podcast_number = int(input('What file would you like to download?'))
 	
-	#names mp3 file with title of podcast episode
-	new_site.mp3_name = new_site.feed.entries[0].title + '.mp3'
+	new_site.site = new_site.feed.entries[podcast_number].links[1].href
+
+	# Names mp3 file with title of podcast episode
+	# as well as replace any spaces with underscores
+	new_site.mp3_name = (new_site.feed.entries[podcast_number].title.replace(' ', '_') + '.mp3')
+	
+	#print(new_site.mp3_name)
 	
 	if(platform.system() == 'Linux' or platform.system() == 'Darwin'):
 		feed_path = unix_path
@@ -106,8 +113,7 @@ def main():
 		feed_path = path_on_windows
 	else:
 		print("os not recognized")
-	
-	wget.download(new_site.site, feed_path + new_site.mp3_name)
+	#wget.download(new_site.site, feed_path + new_site.mp3_name)
 
 if __name__ == '__main__':
 	main()
