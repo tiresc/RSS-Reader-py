@@ -1,9 +1,10 @@
 "# RSS-Reader-py" 
 
-Modules needed: <br>
+Dependencies: <br>
 requests<br>
 feedparser<br>
 wget<br>
+eyed3<br>
 
 
 Goal of this project is:<br>
