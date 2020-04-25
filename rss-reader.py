@@ -8,6 +8,7 @@ import feedparser
 import wget
 import os
 import platform
+import eyed3
 from pathlib import Path, PureWindowsPath
 
 class SITE():
@@ -20,6 +21,9 @@ class SITE():
 		self.mp3 = ' ' # mp3 url
 		self.mp3_name = ' ' # name of mp3
 		self.mp3_index = 0 # mp3 index
+
+		self.mp3_file_name = ' '
+
 
 	def if_empty(self):
 		if self.site == ' ':
@@ -37,12 +41,21 @@ class SITE():
 		response = requests.get(self.site)
 		self.site_size = len(response.content)
 
-	def print_info(self):
+	def print_info(self): 
 		for x in range(0,len(self.parsed_site.entries)):
 			print(("%d: %s") % (x ,self.parsed_site.entries[x].title))
 		
 		# Prints out entire website
 		# Print( self.content )
+
+def save_meta_data(feed_path, site):
+	
+	audiofile = eyed3.load(feed_path + site.parsed_site.entries[site.mp3_index].author + '\\' + site.mp3_file_name)
+	audiofile.tag.artist = site.parsed_site.entries[site.mp3_index].author
+	audiofile.tag.title = site.parsed_site.entries[site.mp3_index].title
+	audiofile.tag.album_artist = site.parsed_site.entries[site.mp3_index].author
+	audiofile.tag.track_num = site.mp3_index
+	audiofile.tag.save()
 
 def create_directories():
 	if os.path.isdir('feeds') and os.path.isdir('config'):
@@ -85,7 +98,6 @@ def options(menu):
 	menu = input("What would you like to do?")
 	return menu, length
 
-
 def save_file(feed_path, config_path, site):
 	s = str(site.site)
 	with open(config_path + 'config.txt', 'a+') as f:
@@ -94,6 +106,7 @@ def save_file(feed_path, config_path, site):
 
 def load_file(feed_path, config_path):
 	new = SITE()
+
 	with open(config_path + 'config.txt', 'r') as f:
 		s = f.readlines()
 	f.close()
@@ -110,6 +123,8 @@ def add_new_feeds(feed_path, config_path):
 	new = SITE()
 	new.site = input('rss feed to add: ')
 	save_file(feed_path, config_path, new)
+	download_feed(feed_path, config_path, new)
+
 
 def download_feed(feed_path, config_path, site):
 	create_directories()
@@ -127,30 +142,49 @@ def download_feed(feed_path, config_path, site):
 
 	# Names mp3 file with title of podcast episode
 	# as well as replace any spaces with underscores
-	site.mp3_name = site.parsed_site.entries[site.mp3_index].title[0:20] + '.mp3'
-	site.mp3_name.replace(' ', '_')
-	
+	site.mp3_name = site.parsed_site.entries[site.mp3_index].title + '.mp3'
+
 	# download preferred mp3
 	answer = input("Are you sure you want to download " + "'" + site.parsed_site.entries[site.mp3_index].title + "'")
 	answer = answer.upper()
+	
 
-	if answer == 'Y':
-		print('feed path:' + feed_path)
-		print('site_url' + site.site)
-		print('mp3 feed:' + site.mp3_feed)
-		print('mp3 name:' + site.mp3_name)
-		newnew = site.mp3_feed.find('/')
-		i = 0
-		for x in site.mp3_feed:
-			if x == '\\':
-				print(x)
+	file_destination = feed_path + site.mp3_name
+	site.mp3_name = site.mp3_name.replace(' ', '_')
+	site.parsed_site.entries[site.mp3_index].author = site.parsed_site.entries[site.mp3_index].author.replace(' ', '_')
+	os.system('mkdir ' + feed_path + site.parsed_site.entries[site.mp3_index].author + '\\' )
+	wget.download(site.mp3_feed, feed_path + site.parsed_site.entries[site.mp3_index].author + '\\')
+	
+	test = feed_path + site.parsed_site.entries[site.mp3_index].author + '\\'
+	path_on_windows = '.'
+	file_list = []
+	rootDir = '.'
+	print('')
 
-		print(newnew)
-		wget.download(site.mp3_feed, feed_path + site.mp3_name)
+
+	for dirName, subdirList, fileList in os.walk(rootDir):	
+		
+		#if(dirName == path_on_windows):
+		if dirName == '.\\feeds\\' + site.parsed_site.entries[site.mp3_index].author:
+			#'.\\feeds\\Lex_Fridman':
+			print("dirname: %s" % dirName)
+			for fname in fileList:
+				print("fname:%s" % fname)
+				file_list.append(fname)
+				print("subdir: %s" % subdirList)
+						#print(subdirList) 
+		
+	for n in file_list:
+		print(n)
+		if n in site.mp3_feed:
+			print("found! site:%s file_name: %s" % (site.mp3_feed,n))
+			site.mp3_file_name = n
+
+	save_meta_data(feed_path, site)
 
 	save_it = input("\nWould you like to save this feed to use for later?")
 	save_it = save_it.upper()
-	
+
 	if save_it == 'Y':
 		save_file(feed_path, config_path, site)
 
@@ -163,13 +197,12 @@ def assign_paths():
 	if(platform.system() == 'Linux' or platform.system() == 'Darwin'):
 		feed_path = unix_feed_path
 		config_path = unix_config_path
-		return feed_path, config_path
 	elif platform.system() == 'Windows':
 		feed_path = windows_feed_path
-		config_path = windows_config_path
-		return feed_path, config_path
+		config_path = windows_config_path	
 	else:
 		print("os not recognized")
+	return feed_path, config_path
 
 def menu_options():
 	while True:
